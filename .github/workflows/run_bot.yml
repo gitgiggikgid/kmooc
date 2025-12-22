@@ -1,0 +1,37 @@
+name: K-MOOC Bot Auto Run
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 매 시간 정각에 실행 (UTC 기준)
+  workflow_dispatch:      # 우리가 수동으로도 버튼 눌러서 실행할 수 있게 함
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 체크아웃 코드
+      uses: actions/checkout@v3
+
+    - name: 파이썬 설치
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: 라이브러리 설치
+      run: |
+        pip install -r requirements.txt
+
+    - name: 봇 실행
+      env:
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        CHAT_ID: ${{ secrets.CHAT_ID }}
+      run: python main.py
+
+    - name: 변경사항 저장 (이미 본 글 목록 업데이트)
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add seen_notices.txt || echo "No changes to commit"
+        git commit -m "Update seen notices" || echo "No changes to commit"
+        git push || echo "No changes to push"
